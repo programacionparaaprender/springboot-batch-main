@@ -85,4 +85,64 @@ public class CategoryReportService {
                 category.getView());
     }
     
+    /**
+     * Exporta todas las categorías a un archivo Excel (.xlsx).
+     */
+    public Mono<Void> exportCategoriesToExcel(String filePath) {
+        Flux<CategoryEntity> fluxCategories = repository.findAll();
+
+        return fluxCategories
+                .collectList()
+                .flatMap(list -> writeToExcel(list, filePath));
+    }
+    
+    /**
+     * Escribe la lista de categorías en un archivo Excel usando Apache POI.
+     */
+    private Mono<Void> writeToExcel(List<CategoryEntity> categories, String filePath) {
+        return Mono.fromRunnable(() -> {
+            try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+                org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Categorías");
+
+                // Crear fila de encabezado
+                org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
+                String[] headers = {"ID", "Nombre", "Título", "URL", "Imagen", "Icono", "Vistas"};
+                for (int i = 0; i < headers.length; i++) {
+                    headerRow.createCell(i).setCellValue(headers[i]);
+                }
+
+                // Llenar filas con los datos
+                int rowNum = 1;
+                for (CategoryEntity category : categories) {
+                    org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowNum++);
+                    row.createCell(0).setCellValue(category.getId());
+                    row.createCell(1).setCellValue(category.getName());
+                    row.createCell(2).setCellValue(category.getTitleList());
+                    row.createCell(3).setCellValue(category.getUrl());
+                    row.createCell(4).setCellValue(category.getImage());
+                    row.createCell(5).setCellValue(category.getIcon());
+                    if (category.getView() != null)
+                        row.createCell(6).setCellValue(category.getView());
+                    else
+                        row.createCell(6).setCellValue(0);
+                }
+
+                // Ajustar el ancho de las columnas automáticamente
+                for (int i = 0; i < headers.length; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+
+                // Guardar archivo en disco
+                try (java.io.FileOutputStream fileOut = new java.io.FileOutputStream(filePath)) {
+                    workbook.write(fileOut);
+                }
+
+                System.out.println("✅ Archivo Excel generado correctamente en: " + filePath);
+            } catch (IOException e) {
+                throw new RuntimeException("Error al escribir archivo Excel", e);
+            }
+        });
+    }
+
+    
 }

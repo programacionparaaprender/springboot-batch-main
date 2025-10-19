@@ -35,7 +35,7 @@ public class BatchApplication implements CommandLineRunner {
     public void run(String... args) {
         try {
             String outputPath = new File("categories.txt").getAbsolutePath();
-
+            String outputPathExcel = new File("categories.xlsx").getAbsolutePath();
             List<CategoryEntity> listCategories = getAllCategoriesUseCase.execute()
                     .collectList()
                     .block(); // Esto sí ejecuta la query
@@ -45,7 +45,7 @@ public class BatchApplication implements CommandLineRunner {
                 return;
             }
 
-            exportCategoriesToTxtUseCase.execute(outputPath).block(); // <-- AQUÍ está la clave
+            exportCategoriesToTxtUseCase.execute(outputPathExcel).block(); // <-- AQUÍ está la clave
             System.out.println("✅ Archivo generado correctamente en: " + outputPath);
         } catch (Exception e) {
             e.printStackTrace();

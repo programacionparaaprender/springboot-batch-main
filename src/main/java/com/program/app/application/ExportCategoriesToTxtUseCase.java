@@ -18,6 +18,7 @@ public class ExportCategoriesToTxtUseCase {
     }
 
     public Mono<Void> execute(String filePath) {
-        return service.exportCategoriesToTxt(filePath);
+        //return service.exportCategoriesToTxt(filePath);
+    	return service.exportCategoriesToExcel(filePath);
     }
 }
