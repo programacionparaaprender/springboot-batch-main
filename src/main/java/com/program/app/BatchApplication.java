@@ -11,15 +11,18 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 
 import com.program.app.application.ExportCategoriesToTxtUseCase;
 import com.program.app.application.GetAllCategoriesUseCase;
+import com.program.app.application.ReadCategoriesFromExcelUseCase;
 import com.program.app.persistence.entity.CategoryEntity;
 
 @SpringBootApplication
 @EnableR2dbcRepositories(basePackages = "com.program.app.persistence.repository")
 public class BatchApplication implements CommandLineRunner {
 	@Autowired
-    public GetAllCategoriesUseCase getAllCategoriesUseCase;
+    private GetAllCategoriesUseCase getAllCategoriesUseCase;
 	@Autowired
-    public ExportCategoriesToTxtUseCase exportCategoriesToTxtUseCase;
+    private ExportCategoriesToTxtUseCase exportCategoriesToTxtUseCase;
+	@Autowired
+	private ReadCategoriesFromExcelUseCase readCategoriesFromExcelUseCase;
 //  private final GetCategoryByIdUseCase getCategoryByIdUseCase;
 //  private final UpdateCategoryUseCase updateCategoryUseCase;
 //  private final DeleteCategoryUseCase deleteCategoryUseCase;
@@ -45,8 +48,16 @@ public class BatchApplication implements CommandLineRunner {
                 return;
             }
 
-            exportCategoriesToTxtUseCase.execute(outputPathExcel).block(); // <-- AQUÍ está la clave
-            System.out.println("✅ Archivo generado correctamente en: " + outputPath);
+            //exportCategoriesToTxtUseCase.execute(outputPathExcel).block(); // <-- AQUÍ está la clave
+            //System.out.println("✅ Archivo generado correctamente en: " + outputPath);
+            
+            readCategoriesFromExcelUseCase.execute(outputPathExcel).doOnNext(list -> {
+                list.forEach(c -> System.out.println(
+                        c.getId() + " | " + c.getName() + " | " + c.getUrl()
+                    ));
+                })
+                .block();
+            
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -1,8 +1,10 @@
 package com.program.app.interfaces.service;
 
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -42,107 +44,84 @@ public class CategoryReportService {
         return repository.findByUrl(url);
     }
     
+    
     /**
-     * Obtiene todas las categorías desde la base de datos (R2DBC)
-     * y las guarda en un archivo TXT.
+     * Lee las categorías desde un archivo Excel (.xlsx) y las convierte a una lista de CategoryEntity.
      */
-    public Mono<Void> exportCategoriesToTxt(String filePath) {
-        Flux<CategoryEntity> fluxCategories = repository.findAll();
+    public Mono<List<CategoryEntity>> readCategoriesFromExcel(String filePath) {
+        return Mono.fromCallable(() -> {
+            List<CategoryEntity> categories = new ArrayList<>();
 
-        return fluxCategories
-                .collectList()
-                .flatMap(list -> writeToTxt(list, filePath));
-    }
+            try (FileInputStream file = new FileInputStream(filePath);
+                 org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(file)) {
 
-    /**
-     * Escribe la lista de categorías en un archivo de texto.
-     */
-    private Mono<Void> writeToTxt(List<CategoryEntity> categories, String filePath) {
-        return Mono.fromRunnable(() -> {
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-                for (CategoryEntity category : categories) {
-                    writer.write(formatCategory(category));
-                    writer.newLine();
+                org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0); // Primera hoja
+                boolean isHeader = true;
+
+                for (org.apache.poi.ss.usermodel.Row row : sheet) {
+                    // Saltar la fila de encabezados
+                    if (isHeader) {
+                        isHeader = false;
+                        continue;
+                    }
+
+                    CategoryEntity category = new CategoryEntity();
+
+                    // Leer cada celda según el orden de columnas
+                    category.setId(getLongValue(row.getCell(0)));
+                    category.setName(getStringValue(row.getCell(1)));
+                    category.setTitleList(getStringValue(row.getCell(2)));
+                    category.setUrl(getStringValue(row.getCell(3)));
+                    category.setImage(getStringValue(row.getCell(4)));
+                    category.setIcon(getStringValue(row.getCell(5)));
+                    category.setView(getIntValue(row.getCell(6)));
+
+                    categories.add(category);
                 }
-                System.out.println("✅ Archivo generado correctamente en: " + filePath);
+
+                System.out.println("✅ Se leyeron " + categories.size() + " categorías desde " + filePath);
             } catch (IOException e) {
-                throw new RuntimeException("Error al escribir el archivo TXT", e);
+                throw new RuntimeException("Error al leer archivo Excel", e);
             }
+
+            return categories;
         });
     }
 
     /**
-     * Formatea cada categoría como una línea de texto.
+     * Métodos auxiliares para convertir valores de celdas de forma segura.
      */
-    private String formatCategory(CategoryEntity category) {
-        return String.format("ID: %d | Nombre: %s | Título: %s | URL: %s | Imagen: %s | Icono: %s | Vistas: %d",
-                category.getId(),
-                category.getName(),
-                category.getTitleList(),
-                category.getUrl(),
-                category.getImage(),
-                category.getIcon(),
-                category.getView());
+    private String getStringValue(org.apache.poi.ss.usermodel.Cell cell) {
+        if (cell == null) return "";
+        cell.setCellType(org.apache.poi.ss.usermodel.CellType.STRING);
+        return cell.getStringCellValue().trim();
     }
+
+    private Long getLongValue(org.apache.poi.ss.usermodel.Cell cell) {
+        if (cell == null) return null;
+        try {
+            return (long) cell.getNumericCellValue();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Integer getIntValue(org.apache.poi.ss.usermodel.Cell cell) {
+        if (cell == null) return null;
+        try {
+            return (int) cell.getNumericCellValue();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     
-    /**
-     * Exporta todas las categorías a un archivo Excel (.xlsx).
-     */
-    public Mono<Void> exportCategoriesToExcel(String filePath) {
-        Flux<CategoryEntity> fluxCategories = repository.findAll();
-
-        return fluxCategories
-                .collectList()
-                .flatMap(list -> writeToExcel(list, filePath));
-    }
     
-    /**
-     * Escribe la lista de categorías en un archivo Excel usando Apache POI.
-     */
-    private Mono<Void> writeToExcel(List<CategoryEntity> categories, String filePath) {
-        return Mono.fromRunnable(() -> {
-            try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
-                org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Categorías");
-
-                // Crear fila de encabezado
-                org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
-                String[] headers = {"ID", "Nombre", "Título", "URL", "Imagen", "Icono", "Vistas"};
-                for (int i = 0; i < headers.length; i++) {
-                    headerRow.createCell(i).setCellValue(headers[i]);
-                }
-
-                // Llenar filas con los datos
-                int rowNum = 1;
-                for (CategoryEntity category : categories) {
-                    org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowNum++);
-                    row.createCell(0).setCellValue(category.getId());
-                    row.createCell(1).setCellValue(category.getName());
-                    row.createCell(2).setCellValue(category.getTitleList());
-                    row.createCell(3).setCellValue(category.getUrl());
-                    row.createCell(4).setCellValue(category.getImage());
-                    row.createCell(5).setCellValue(category.getIcon());
-                    if (category.getView() != null)
-                        row.createCell(6).setCellValue(category.getView());
-                    else
-                        row.createCell(6).setCellValue(0);
-                }
-
-                // Ajustar el ancho de las columnas automáticamente
-                for (int i = 0; i < headers.length; i++) {
-                    sheet.autoSizeColumn(i);
-                }
-
-                // Guardar archivo en disco
-                try (java.io.FileOutputStream fileOut = new java.io.FileOutputStream(filePath)) {
-                    workbook.write(fileOut);
-                }
-
-                System.out.println("✅ Archivo Excel generado correctamente en: " + filePath);
-            } catch (IOException e) {
-                throw new RuntimeException("Error al escribir archivo Excel", e);
-            }
-        });
-    }
-
+    
+    
+    
+    
+    
+   
     
 }
