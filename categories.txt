@@ -1,0 +1,7 @@
+ID: 1 | Nombre: Consumer Electric | Título: ["Electronic","Accessories and Parts"] | URL: consumer-electric | Imagen: comsumer-electric.jpg | Icono: icon-laundry | Vistas: 2
+ID: 2 | Nombre: Clothing and Apparel | Título: ["Mens","Womens","Kids"] | URL: clothing-apparel | Imagen: clothing-apparel.jpg | Icono: icon-shirt | Vistas: 4
+ID: 3 | Nombre: Home, Garden and Kitchen | Título: ["Home","Garden","Kitchen"] | URL: home-kitchen | Imagen: home-kitchen.jpg | Icono: icon-lampshade | Vistas: 5
+ID: 4 | Nombre: Health and Beauty | Título: ["Health","Beauty"] | URL: health-beauty | Imagen: health-beauty.jpg | Icono: icon-heart-pulse | Vistas: 23
+ID: 5 | Nombre: Jewelry and Watches | Título: ["Jewelry","Watches"] | URL: jewelry-watches | Imagen: jewelry-watches.jpg | Icono: icon-diamond2 | Vistas: 3
+ID: 6 | Nombre: Computer and Technology | Título: ["Computer","Technology"] | URL: computer-technology | Imagen: computer-technology.jpg | Icono: icon-desktop | Vistas: 45
+ID: 7 | Nombre: Consumer Electric 2 | Título: ["Electronic 2","Accessories and Parts 2"] | URL: consumer-electric2 | Imagen: comsumer-electric2.jpg | Icono: icon-laundry2 | Vistas: 5

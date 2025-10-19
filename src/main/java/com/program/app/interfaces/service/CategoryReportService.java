@@ -1,0 +1,88 @@
+package com.program.app.interfaces.service;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.program.app.persistence.entity.CategoryEntity;
+import com.program.app.persistence.repository.CategoryRepository;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+@Service
+public class CategoryReportService {
+
+    private final CategoryRepository repository;
+
+    public CategoryReportService(CategoryRepository repository) {
+        this.repository = repository;
+    }
+
+    // Obtener todas las categorías
+    public Flux<CategoryEntity> findAll() {
+        return repository.findAll();
+    }
+
+    // Buscar categoría por ID
+    public Mono<CategoryEntity> findById(Long id) {
+        return repository.findById(id);
+    }
+
+    // Buscar categoría por nombre
+    public Flux<CategoryEntity> findByName(String name) {
+        return repository.findByName(name);
+    }
+
+    // Buscar categoría por URL (única)
+    public Mono<CategoryEntity> findByUrl(String url) {
+        return repository.findByUrl(url);
+    }
+    
+    /**
+     * Obtiene todas las categorías desde la base de datos (R2DBC)
+     * y las guarda en un archivo TXT.
+     */
+    public Mono<Void> exportCategoriesToTxt(String filePath) {
+        Flux<CategoryEntity> fluxCategories = repository.findAll();
+
+        return fluxCategories
+                .collectList()
+                .flatMap(list -> writeToTxt(list, filePath));
+    }
+
+    /**
+     * Escribe la lista de categorías en un archivo de texto.
+     */
+    private Mono<Void> writeToTxt(List<CategoryEntity> categories, String filePath) {
+        return Mono.fromRunnable(() -> {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+                for (CategoryEntity category : categories) {
+                    writer.write(formatCategory(category));
+                    writer.newLine();
+                }
+                System.out.println("✅ Archivo generado correctamente en: " + filePath);
+            } catch (IOException e) {
+                throw new RuntimeException("Error al escribir el archivo TXT", e);
+            }
+        });
+    }
+
+    /**
+     * Formatea cada categoría como una línea de texto.
+     */
+    private String formatCategory(CategoryEntity category) {
+        return String.format("ID: %d | Nombre: %s | Título: %s | URL: %s | Imagen: %s | Icono: %s | Vistas: %d",
+                category.getId(),
+                category.getName(),
+                category.getTitleList(),
+                category.getUrl(),
+                category.getImage(),
+                category.getIcon(),
+                category.getView());
+    }
+    
+}
